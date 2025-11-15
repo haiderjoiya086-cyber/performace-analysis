@@ -1,0 +1,231 @@
+{
+  "name": "My workflow 3",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -304,
+        -48
+      ],
+      "id": "34e88546-d90d-4f61-a482-19e86937ede0",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "12YF3gWZza-c1niR6Tby1LjDErkqJQaOCR4Jg66wH3Ns",
+          "mode": "list",
+          "cachedResultName": "Employee_Performance_Data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/12YF3gWZza-c1niR6Tby1LjDErkqJQaOCR4Jg66wH3Ns/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/12YF3gWZza-c1niR6Tby1LjDErkqJQaOCR4Jg66wH3Ns/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -96,
+        -48
+      ],
+      "id": "6b6b1617-6619-4c66-8f04-771aedc831fb",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "zMyp75XXdn7lNm7e",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        112,
+        -48
+      ],
+      "id": "cf794b4c-7568-4261-93eb-bb49453fc038",
+      "name": "Loop Over Items",
+      "alwaysOutputData": true,
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-3.5-turbo",
+          "mode": "list",
+          "cachedResultName": "GPT-3.5-TURBO"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=\nYou are a HR performace ananlysist.\nHere is an employee weekly data:\nName:{{ $json.Name }}\nAttendance:{{ $json['Attendance %']}}\nTask assigned:{{ $json['Tasks Assigned'] }}\nGoal achieved:{{ $json['Goals Achieved'] }}\nTasks completed:{{ $json['Tasks Completed'] }}\n"
+            },
+            {
+              "role": "system",
+              "content": "just Analyze and create a short professinal summary including :\nEmployee overall performace summary\nArea of improvement\nAI recommedations for next week goals \n\n"
+            }
+          ]
+        },
+        "simplify": false,
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2,
+      "position": [
+        448,
+        -32
+      ],
+      "id": "9352664a-cdba-45cd-a2d4-7d56bcca7cf5",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "4YAHh5odtdjdogQl",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Loop Over Items').item.json.Email }}",
+        "subject": "weekly  perforamce data",
+        "emailType": "text",
+        "message": "=\n{{ $json.email }}\n{{ $json.summary }}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        976,
+        -32
+      ],
+      "id": "8293b52f-a9a6-4d3c-99da-127ae901c53b",
+      "name": "Send a message",
+      "webhookId": "736d207d-3e4e-4758-a8cb-822c348b9305",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "tgnrdvv7Up9vSShG",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0c125829-9d07-4470-af5b-44424832e797",
+              "name": "email",
+              "value": "=Hi {{ $('Loop Over Items').item.json.Name }}\nHere is your weekly performace data\nTasks Assigned:{{ $('Loop Over Items').item.json['Tasks Assigned'] }}\nTask comleted:{{ $('Loop Over Items').item.json['Tasks Completed'] }}\nAttendace:{{ $('Loop Over Items').item.json['Attendance %'] }}\nGoals Achieved:{{ $('Loop Over Items').item.json['Goals Achieved'] }}",
+              "type": "string"
+            },
+            {
+              "id": "b4757b5c-3058-4ecd-9052-fb3bac121283",
+              "name": "summary",
+              "value": "={{ $json.output[0].content[0].text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        784,
+        -32
+      ],
+      "id": "80d46d99-d9c5-4429-b33f-813d17fbc987",
+      "name": "Edit Fields"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "bfe880cf-8b88-4fda-b7d1-17933386231d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "cdd3c645ec6727aa92849a7bb99f9eda9676e03b0315590bc4ab8a7e97a3452f"
+  },
+  "id": "DemqwTcybDhmdpgR",
+  "tags": []
+}
